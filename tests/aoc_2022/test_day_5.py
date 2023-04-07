@@ -20,3 +20,4 @@ def test_row_to_stack() -> None:
 
 def test_main() -> None:
     assert day_5.main("src/aoc/aoc_2022/inputs/day_5_test.txt") == "CMZ"
+    assert day_5.main("src/aoc/aoc_2022/inputs/day_5_test.txt", pop_bunch=True) == "MCD"
