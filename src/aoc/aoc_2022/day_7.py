@@ -1,6 +1,7 @@
 import re
 from typing import TypeVar, Optional
 from dataclasses import dataclass, field
+import heapq
 
 
 @dataclass
@@ -44,16 +45,15 @@ def contains_file(dir: Directory, name: str) -> Optional[File]:
 
 
 def add_directory_size(
-    dir: Directory, included_sizes: list[int], include_boundary: int = 100000
+    dir: Directory, sizes: list[int], include_boundary: int = 100000
 ) -> None:
     size = sum(file.size for file in dir.files.values())
     for folder in dir.folders.values():
-        add_directory_size(folder, included_sizes)
+        add_directory_size(folder, sizes)
         size += folder.size
 
     dir.size = size
-    if size <= include_boundary:
-        included_sizes.append(size)
+    sizes.append(size)
 
 
 def parse_line(line: str, cd: Directory) -> Directory:
@@ -86,7 +86,19 @@ def parse_line(line: str, cd: Directory) -> Directory:
     return cd
 
 
-def main(input_fp: str) -> tuple[int, list[int]]:
+def min_to_remove(
+    sizes: list[int], base: Directory, total: int = 70000000, min_space: int = 30000000
+) -> int:
+    heapq.heapify(sizes)
+    existing = total - base.size
+    target = min_space - existing
+    while True:
+        next_pop = heapq.heappop(sizes)
+        if next_pop >= target:
+            return next_pop
+
+
+def main(input_fp: str) -> tuple[int, int]:
     cd = base = RootDirectory("\\")
     with open(input_fp) as file:
         file_iter = iter(file)
@@ -94,12 +106,12 @@ def main(input_fp: str) -> tuple[int, list[int]]:
         for line in file:
             cd = parse_line(line.strip(), cd)
 
-    included_sizes: list[int] = []
-    add_directory_size(base, included_sizes)
-    return sum(included_sizes), included_sizes
+    sizes: list[int] = []
+    add_directory_size(base, sizes)
+    return sum(filter(lambda x: x < 100000, sizes)), min_to_remove(sizes, base)
 
 
 if __name__ == "__main__":
-    total, sizes = main("src/aoc/aoc_2022/inputs/day_7.txt")
-    print(len(sizes))
+    total, remove = main("src/aoc/aoc_2022/inputs/day_7.txt")
     print(total)
+    print(remove)
